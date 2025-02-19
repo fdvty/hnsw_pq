@@ -9,12 +9,32 @@
 #include <vector>
 using namespace std;
 
+void HNSWGraph::buildPQ(int _subspaceNum, int _centroidNum, int dim, int max_iter){
+	subspaceNum = _subspaceNum;
+	centroidNum = _centroidNum;
+	usePQ = true;
+	int subspaceDim = dim / subspaceNum;
+	for(int i = 0; i < subspaceNum; ++i){
+		vector<vector<double>> points(itemNum, vector<double>(subspaceDim));
+		for(int j = 0; j < itemNum; ++j){
+			for(int k = 0; k < subspaceDim; ++k)
+				points[j][k] = items[j].values[i * subspaceDim + k];
+		}
+		kmeans.push_back(KMeans(centroidNum, max_iter));
+		kmeans[i].initialize(points);
+	}
+	for(int i = 0; i < items.size(); ++i)
+		items[i].get_centroids(kmeans);
+}
+
 vector<int> HNSWGraph::searchLayer(Item& q, int ep, int ef, int lc) {
 	set<pair<double, int>> candidates;
 	set<pair<double, int>> nearestNeighbors;
 	unordered_set<int> isVisited;
 
-	double td = q.dist(items[ep]);
+	// if(usePQ) cout << "debug 1" << endl;
+	double td = usePQ ? q.pqdist(items[ep], kmeans) : q.dist(items[ep]);
+	// if(usePQ) cout << "debug 2" << endl;
 	candidates.insert(make_pair(td, ep));
 	nearestNeighbors.insert(make_pair(td, ep));
 	isVisited.insert(ep);
@@ -27,7 +47,10 @@ vector<int> HNSWGraph::searchLayer(Item& q, int ep, int ef, int lc) {
 			if (isVisited.find(ed) != isVisited.end()) continue;
 			fi = nearestNeighbors.end(); fi--;
 			isVisited.insert(ed);
-			td = q.dist(items[ed]);
+			if(usePQ == false)
+				td = q.dist(items[ed]);
+			else
+				td = q.pqdist(items[ed], kmeans);
 			if ((td < fi->first) || nearestNeighbors.size() < ef) {
 				candidates.insert(make_pair(td, ed));
 				nearestNeighbors.insert(make_pair(td, ed));

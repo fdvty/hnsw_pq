@@ -2,7 +2,7 @@
 CXX = g++
 
 # 编译选项
-CXXFLAGS = -Wall -Wextra -std=c++11
+CXXFLAGS = -std=c++11
 
 # 目标可执行文件
 TARGET = hnsw_main
