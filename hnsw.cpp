@@ -22,6 +22,7 @@ void HNSWGraph::buildPQ(int _subspaceNum, int _centroidNum, int dim, int max_ite
 		}
 		kmeans.push_back(KMeans(centroidNum, max_iter));
 		kmeans[i].initialize(points);
+		kmeans[i].fit();
 	}
 	for(int i = 0; i < items.size(); ++i)
 		items[i].get_centroids(kmeans);
@@ -83,7 +84,7 @@ void HNSWGraph::Insert(Item& q) {
 	int maxLyer = layerEdgeLists.size() - 1;
 	int l = 0;
 	uniform_real_distribution<double> distribution(0.0,1.0);
-	while(l < ml && (1.0 / ml <= distribution(generator))) {
+	while(l < ml && (1.0 / ml <= distribution(generator))) { //1/ml probablity to add into the layer
 		l++;
 		if (layerEdgeLists.size() <= l) layerEdgeLists.push_back(unordered_map<int, vector<int>>());
 	}
